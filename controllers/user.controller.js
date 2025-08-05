@@ -109,12 +109,15 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const forgetPassword = async (req, res) => {
+  try {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
 
-    // Use indexed email field with lean
+  
     const user = await User.findOne({ email })
       .select('_id email')
       .lean();
@@ -124,22 +127,21 @@ export const login = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiryTime = Date.now() + 1000 * 60 * 4; // Store as timestamp
+    const otpExpiryTime = Date.now() + 1000 * 60 * 4; 
 
-    // Update indexed otp fields
     await User.updateOne(
       { _id: user._id },
       { otp, otpExpiryTime }
     );
 
-    // Fire-and-forget email sending
+    
     sendEmail(email, "Password Reset OTP", `Your OTP is: ${otp}`)
       .catch(err => console.error("Email send error:", err));
 
     return res.status(200).json({ 
       success: true, 
       message: "OTP sent successfully",
-      otpExpiryTime // Return expiry time to client
+      otpExpiryTime 
     });
 
   } catch (error) {
