@@ -9,9 +9,19 @@ dotenv.config();
 
 const app = express();
 
-// Define the allowed origin.
+const allowedOrigins = [
+  'http://localhost:5179',
+  'https://your-frontend-domain.com' 
+];
+
 const corsOptions = {
-  origin: "http://localhost:5179",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: ["Content-Type", "Authorization"],
