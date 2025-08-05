@@ -2,23 +2,25 @@ import jwt from "jsonwebtoken";
 
 const authMiddleware = (req, res, next) => {
   try {
-    // Check both cookies and Authorization header
-    const token = req.cookies?.token || req.headers?.authorization?.split(' ')[1];
-    
+    // ✅ Extract token directly from cookies (avoid unnecessary operations)
+    const token = req.cookies?.token;
     if (!token) {
       return res.status(401).json({ success: false, message: "Access Denied: No Token Provided" });
     }
 
+    // ✅ Verify and attach user data synchronously (Avoid `await`)
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
-        const message = err.name === "TokenExpiredError" 
-          ? "Token Expired. Please log in again."
-          : "Invalid Token. Please log in again.";
+        const message =
+          err.name === "TokenExpiredError"
+            ? "Token Expired. Please log in again."
+            : "Invalid Token. Please log in again.";
         return res.status(401).json({ success: false, message });
       }
 
-      req.user = decoded;
-      return next();
+      req.user = decoded; // ✅ Attach decoded user data
+
+      return next(); // ✅ Pass control to the next middleware
     });
   } catch (error) {
     console.error("Auth Middleware Error ===>", error);
