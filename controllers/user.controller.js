@@ -73,16 +73,17 @@ export const login = async (req, res) => {
 
     const [isMatch, token] = await Promise.all([
       bcrypt.compare(password, user.password),
-      jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      }),
+      jwt.sign(
+        { id: user._id, email: user.email }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: "7d" } // Changed from 1h to 7d to match cookie
+      ),
     ]);
 
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Invalid email or password" });
     }
 
-    // Production-ready cookie settings
     const isProduction = process.env.NODE_ENV === 'production';
     
     res.cookie('token', token, {
@@ -90,14 +91,12 @@ export const login = async (req, res) => {
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      domain: isProduction ? '.yourdomain.com' : undefined
     });
 
-    // Also send token in response for clients that can't use cookies
     return res.status(200).json({ 
       success: true, 
       message: "Login successful",
-      token, // Send token in response body
+      token,
       user: {
         id: user._id,
         email: user.email,
@@ -109,6 +108,7 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const forgetPassword = async (req, res) => {
   try {
