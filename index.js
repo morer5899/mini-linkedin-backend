@@ -10,8 +10,7 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-  'http://localhost:5179',
-  'https://your-frontend-domain.com' 
+  'https://mini-likedin-frontend.vercel.app' 
 ];
 
 const corsOptions = {
