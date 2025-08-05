@@ -59,17 +59,13 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    console.log(req.body)
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    
-    const user = await User.findOne({ email })
-      .select("password")
-      .lean();
+    const user = await User.findOne({ email }).select("password").lean();
 
     if (!user) {
       return res.status(400).json({ success: false, message: "Invalid email or password" });
@@ -86,28 +82,33 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid email or password" });
     }
 
-  res.cookie('token', token, {
-  httpOnly: true,
-  secure: true, // Must be true in production
-  sameSite: 'none', // Required for cross-site cookies
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
-});
+    // Production-ready cookie settings
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      domain: isProduction ? '.yourdomain.com' : undefined
+    });
 
+    // Also send token in response for clients that can't use cookies
     return res.status(200).json({ 
       success: true, 
       message: "Login successful",
-      user: user
+      token, // Send token in response body
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username
+      }
     });
-
   } catch (error) {
     console.error("Login Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-export const forgetPassword = async (req, res) => {
-  try {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
